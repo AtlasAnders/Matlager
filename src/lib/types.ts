@@ -1,11 +1,24 @@
-import type { VareModel } from "@/generated/prisma/models/Vare";
-import type { KategoriModel } from "@/generated/prisma/models/Kategori";
-import { Enhet } from "@/generated/prisma/enums";
+import type { Database } from "./supabase/database.types";
 
-export type { Enhet };
+export type Enhet = Database["public"]["Enums"]["enhet"];
 
-export type VareMedKategori = VareModel & { kategori: KategoriModel };
-export type { KategoriModel };
+export type KategoriModel = {
+  id: string;
+  navn: string;
+  ikon: string;
+  farge: string;
+  rekkefolge: number;
+};
+
+export type VareMedKategori = {
+  id: string;
+  navn: string;
+  kategoriId: string;
+  mengde: number;
+  enhet: Enhet;
+  sistOppdatert: string;
+  kategori: KategoriModel;
+};
 
 export const ENHET_LABELS: Record<Enhet, string> = {
   stk: "stk",

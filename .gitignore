@@ -40,8 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
-
-# sqlite database
-/prisma/*.db
-/prisma/*.db-journal
+# agent skills: .claude/skills symlinks into .agents/skills (real source,
+# tracked below) — the symlinks resolve to absolute local paths and get
+# dereferenced into duplicate files on `git add`, so keep them untracked.
+# Regenerate locally with: npx skills add supabase/agent-skills
+/.claude

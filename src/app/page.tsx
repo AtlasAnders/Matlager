@@ -1,14 +1,26 @@
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
+import { mapKategori, mapVare } from "@/lib/mappers";
 import GroceryApp from "@/components/GroceryApp";
 
 export default async function Home() {
-  const [kategorier, varer] = await Promise.all([
-    prisma.kategori.findMany({ orderBy: { rekkefolge: "asc" } }),
-    prisma.vare.findMany({
-      include: { kategori: true },
-      orderBy: { navn: "asc" },
-    }),
-  ]);
+  const supabase = await createClient();
 
-  return <GroceryApp initialKategorier={kategorier} initialVarer={varer} />;
+  const [{ data: kategorier, error: kategoriError }, { data: varer, error: vareError }] =
+    await Promise.all([
+      supabase.from("kategori").select("*").order("rekkefolge", { ascending: true }),
+      supabase
+        .from("vare")
+        .select("*, kategori(*)")
+        .order("navn", { ascending: true }),
+    ]);
+
+  if (kategoriError) throw kategoriError;
+  if (vareError) throw vareError;
+
+  return (
+    <GroceryApp
+      initialKategorier={(kategorier ?? []).map(mapKategori)}
+      initialVarer={(varer ?? []).map(mapVare)}
+    />
+  );
 }

@@ -1,12 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Enhet } from "@/generated/prisma/enums";
-
-function rund(n: number) {
-  return Math.round(n * 100) / 100;
-}
+import { mapVare } from "@/lib/mappers";
+import type { Enhet } from "@/lib/types";
 
 export type VareInput = {
   navn: string;
@@ -15,65 +12,94 @@ export type VareInput = {
   enhet: Enhet;
 };
 
+function rund(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
 export async function opprettVare(input: VareInput) {
   const navn = input.navn.trim();
   if (!navn) throw new Error("Navn er påkrevd");
 
-  const vare = await prisma.vare.create({
-    data: {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vare")
+    .insert({
       navn,
-      kategoriId: input.kategoriId,
+      kategori_id: input.kategoriId,
       mengde: Math.max(0, rund(input.mengde)),
       enhet: input.enhet,
-    },
-    include: { kategori: true },
-  });
+    })
+    .select("*, kategori(*)")
+    .single();
+
+  if (error) throw error;
   revalidatePath("/");
-  return vare;
+  return mapVare(data);
 }
 
 export async function oppdaterVare(id: string, input: VareInput) {
   const navn = input.navn.trim();
   if (!navn) throw new Error("Navn er påkrevd");
 
-  const vare = await prisma.vare.update({
-    where: { id },
-    data: {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vare")
+    .update({
       navn,
-      kategoriId: input.kategoriId,
+      kategori_id: input.kategoriId,
       mengde: Math.max(0, rund(input.mengde)),
       enhet: input.enhet,
-    },
-    include: { kategori: true },
-  });
+    })
+    .eq("id", id)
+    .select("*, kategori(*)")
+    .single();
+
+  if (error) throw error;
   revalidatePath("/");
-  return vare;
+  return mapVare(data);
 }
 
 export async function slettVare(id: string) {
-  await prisma.vare.delete({ where: { id } });
+  const supabase = await createClient();
+  const { error } = await supabase.from("vare").delete().eq("id", id);
+  if (error) throw error;
   revalidatePath("/");
 }
 
 export async function endreMengde(id: string, delta: number) {
-  const eksisterende = await prisma.vare.findUniqueOrThrow({ where: { id } });
-  const nyMengde = Math.max(0, rund(eksisterende.mengde + delta));
+  const supabase = await createClient();
 
-  const vare = await prisma.vare.update({
-    where: { id },
-    data: { mengde: nyMengde },
-    include: { kategori: true },
-  });
+  const { data: eksisterende, error: hentError } = await supabase
+    .from("vare")
+    .select("mengde")
+    .eq("id", id)
+    .single();
+  if (hentError) throw hentError;
+
+  const nyMengde = Math.max(0, rund(Number(eksisterende.mengde) + delta));
+
+  const { data, error } = await supabase
+    .from("vare")
+    .update({ mengde: nyMengde })
+    .eq("id", id)
+    .select("*, kategori(*)")
+    .single();
+
+  if (error) throw error;
   revalidatePath("/");
-  return vare;
+  return mapVare(data);
 }
 
 export async function settMengde(id: string, mengde: number) {
-  const vare = await prisma.vare.update({
-    where: { id },
-    data: { mengde: Math.max(0, rund(mengde)) },
-    include: { kategori: true },
-  });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vare")
+    .update({ mengde: Math.max(0, rund(mengde)) })
+    .eq("id", id)
+    .select("*, kategori(*)")
+    .single();
+
+  if (error) throw error;
   revalidatePath("/");
-  return vare;
+  return mapVare(data);
 }
