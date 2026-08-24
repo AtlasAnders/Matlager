@@ -18,10 +18,14 @@ Krever Node.js 20+.
 npm install
 ```
 
-Kjør migrasjon (oppretter SQLite-databasen) og seed kategoriene:
+`npm install` genererer automatisk Prisma-klienten (`postinstall`), og både
+`npm run dev` og `npm run build` kjører `prisma migrate deploy` automatisk
+først (`predev`/`prebuild`), så SQLite-databasen og tabellene opprettes av
+seg selv på en ny maskin/klone.
+
+Første gang må du likevel seede de 12 kategoriene (og noen eksempelvarer):
 
 ```bash
-npx prisma migrate dev
 npx prisma db seed
 ```
 
