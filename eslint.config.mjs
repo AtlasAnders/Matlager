@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Hostinger's Supabase auto-connect wizard requires this exact
+    // CommonJS snippet at the project root; it's not part of the app.
+    "db.js",
   ]),
 ]);
 
