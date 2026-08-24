@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Kategori {
+  id     String @id @default(cuid())
+  navn   String @unique
+  ikon   String
+  farge  String
+  rekkefolge Int @default(0)
+  varer  Vare[]
+}
+
+model Vare {
+  id             String   @id @default(cuid())
+  navn           String
+  kategori       Kategori @relation(fields: [kategoriId], references: [id])
+  kategoriId     String
+  mengde         Float
+  enhet          Enhet
+  sistOppdatert  DateTime @updatedAt
+
+  @@index([kategoriId])
+}
+
+enum Enhet {
+  stk
+  kg
+  g
+  l
+  dl
+  ml
+  pakke
+  boks
+  pose
+}
