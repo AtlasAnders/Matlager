@@ -1,4 +1,4 @@
-const CACHE_NAME = "dagligvarer-v1";
+const CACHE_NAME = "dagligvarer-v2";
 const START_URL = "/";
 
 self.addEventListener("install", () => {
@@ -21,8 +21,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  const isNavigation = request.mode === "navigate";
+
   event.respondWith(
-    fetch(request)
+    fetch(isNavigation ? new Request(request, { cache: "no-store" }) : request)
       .then((response) => {
         if (response && response.ok) {
           const clone = response.clone();
