@@ -19,15 +19,11 @@ npm install
 ```
 
 `npm install` genererer automatisk Prisma-klienten (`postinstall`), og både
-`npm run dev` og `npm run build` kjører `prisma migrate deploy` automatisk
-først (`predev`/`prebuild`), så SQLite-databasen og tabellene opprettes av
-seg selv på en ny maskin/klone.
-
-Første gang må du likevel seede de 12 kategoriene (og noen eksempelvarer):
-
-```bash
-npx prisma db seed
-```
+`npm run dev` og `npm run build` kjører `prisma migrate deploy` og
+`prisma db seed` automatisk først (`predev`/`prebuild`). SQLite-databasen,
+tabellene og de 12 kategoriene opprettes altså av seg selv på en ny
+maskin/klone – seedingen er trygg å kjøre på nytt (bruker `upsert`) og
+rører ikke egne varer du har lagt til.
 
 Start utviklingsserveren:
 
