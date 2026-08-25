@@ -115,12 +115,12 @@ export async function settMengde(id: string, mengde: number) {
   return mapVare(data);
 }
 
-export async function settPaHandleliste(id: string, verdi: boolean) {
+export async function settPaHandleliste(id: string, verdi: boolean, mengde: number | null = null) {
   const lagerId = await kreverAktivLager();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vare")
-    .update({ pa_handleliste: verdi })
+    .update({ pa_handleliste: verdi, pa_handleliste_mengde: verdi ? mengde : null })
     .eq("id", id)
     .eq("lager_id", lagerId)
     .select("*, kategori(*)")

@@ -95,7 +95,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
         manuelt.set(v.id, {
           id: v.id,
           navn: v.navn,
-          mengdeAaKjope: 0,
+          mengdeAaKjope: v.paHandlelisteMengde ?? 0,
           enhet: v.enhet,
           kategori: v.kategori,
           fraMiddagsplan: false,
@@ -223,19 +223,22 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     }
   }
 
-  async function handleTogglePaHandleliste(id: string, verdi: boolean) {
+  async function handleTogglePaHandleliste(id: string, verdi: boolean, mengde: number | null = null) {
     const forrige = varer;
-    setVarer((prev) => prev.map((v) => (v.id === id ? { ...v, paHandleliste: verdi } : v)));
+    const nyMengde = verdi ? mengde : null;
+    setVarer((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, paHandleliste: verdi, paHandlelisteMengde: nyMengde } : v))
+    );
     try {
-      const oppdatert = await actions.settPaHandleliste(id, verdi);
+      const oppdatert = await actions.settPaHandleliste(id, verdi, nyMengde);
       setVarer((prev) => prev.map((v) => (v.id === id ? oppdatert : v)));
     } catch {
       setVarer(forrige);
     }
   }
 
-  function handleFlyttTilHandleliste(entry: HandlelisteEntry) {
-    if (entry.vareId) handleTogglePaHandleliste(entry.vareId, true);
+  function handleFlyttTilHandleliste(entry: HandlelisteEntry, mengde: number) {
+    if (entry.vareId) handleTogglePaHandleliste(entry.vareId, true, mengde > 0 ? mengde : null);
   }
 
   function handleFjernFraHandleliste(entry: HandlelisteEntry) {

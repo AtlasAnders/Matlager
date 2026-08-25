@@ -9,7 +9,7 @@ type Props = {
   grupper: Gruppe[];
   kategorier: KategoriModel[];
   onKjop: OnKjop;
-  onFlytt: (entry: HandlelisteEntry) => void;
+  onFlytt: (entry: HandlelisteEntry, mengde: number) => void;
 };
 
 export default function TomtVisning({ grupper, kategorier, onKjop, onFlytt }: Props) {

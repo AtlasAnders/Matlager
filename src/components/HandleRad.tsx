@@ -18,7 +18,7 @@ export function HandleRad({
   entry: HandlelisteEntry;
   kategorier: KategoriModel[];
   onKjop: OnKjop;
-  onFlytt?: (entry: HandlelisteEntry) => void;
+  onFlytt?: (entry: HandlelisteEntry, mengde: number) => void;
   onFjern?: (entry: HandlelisteEntry) => void;
   visningstype?: "handleliste" | "tomt";
 }) {
@@ -30,6 +30,12 @@ export function HandleRad({
   const [kategoriId, setKategoriId] = useState("");
   const [lagrer, setLagrer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
+
+  function handleFlytt() {
+    if (!onFlytt) return;
+    const mengdeTall = parseFloat(kjoptMengde.replace(",", "."));
+    onFlytt(entry, Number.isNaN(mengdeTall) ? 0 : mengdeTall);
+  }
 
   async function handleKjop() {
     const mengdeTall = parseFloat(kjoptMengde.replace(",", "."));
@@ -97,7 +103,7 @@ export function HandleRad({
         {visningstype === "tomt" && onFlytt && (
           <button
             type="button"
-            onClick={() => onFlytt(entry)}
+            onClick={handleFlytt}
             className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-strong px-3 text-sm font-semibold text-foreground"
           >
             <ShoppingCart className="h-4 w-4" />

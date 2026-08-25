@@ -19,6 +19,7 @@ export type VareMedKategori = {
   sistOppdatert: string;
   kategori: KategoriModel;
   paHandleliste: boolean;
+  paHandlelisteMengde: number | null;
 };
 
 export type PlanlagtIngrediens = {
