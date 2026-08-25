@@ -80,8 +80,9 @@ To tabeller i Supabase-prosjektet:
 `enhet` er en Postgres-enum (`stk, kg, g, l, dl, ml, pakke, boks, pose`), og
 `sist_oppdatert` settes automatisk av en trigger ved hver `UPDATE`.
 
-For tilgangskontroll: `tilgangskoder`, `tilgangsforesporsler` og
-`app_innstillinger` (se [Tilgangskontroll](#tilgangskontroll)).
+`vare` har også `lager_id` (se [Flere kjøkken/lagre](#flere-kjøkkenlagre)
+under). For tilgangskontroll: `tilgangskoder`, `tilgangsforesporsler`,
+`lager` og `app_innstillinger` (se [Tilgangskontroll](#tilgangskontroll)).
 
 ## Tilgangskontroll
 
@@ -95,10 +96,11 @@ kodeport foran Next.js-appen:
   trykke **"Be om tilgang"** og sende inn navn (+ valgfri melding) – det
   havner som en ventende forespørsel i databasen.
 - **`/admin`** (logg inn med `ADMIN_CODE`) viser ventende forespørsler.
-  **Godkjenn** genererer en tilfeldig 6-tegns kode du kan sende personen
-  (SMS, muntlig, e-post – utenfor appen), **Avvis** avslår den. Du kan også
-  opprette koder manuelt uten en forespørsel, og tilbakekalle koder som er
-  aktive.
+  **Godkjenn** åpner et lite skjema der du selv skriver inn koden personen
+  skal bruke og velger hvilket kjøkken/lager den skal åpne (se under),
+  **Avvis** avslår den. Du kan også opprette koder manuelt uten en
+  forespørsel, og tilbakekalle koder som er aktive. Koden er alltid nøyaktig
+  det du skriver inn – ingenting genereres tilfeldig.
 - Kodene lagres i `tilgangskoder`-tabellen, forespørslene i
   `tilgangsforesporsler`. Begge har RLS påslått uten policyer – de er kun
   nåbare via et sett `SECURITY DEFINER`-funksjoner i Postgres
@@ -106,6 +108,29 @@ kodeport foran Next.js-appen:
   som selv krever `ADMIN_CODE` som parameter). Ingen kan altså lese koder
   eller forespørsler direkte via Supabase sitt REST-API, i motsetning til
   `kategori`/`vare` som med vilje er helt åpne.
+
+## Flere kjøkken/lagre
+
+Hver tilgangskode er koblet til et **lager** (et kjøkken/en husholdning).
+Ulike koder kan peke på ulike lagre, slik at flere husholdninger kan bruke
+samme app-instans uten å se hverandres varer:
+
+- `lager`-tabellen holder bare et navn (f.eks. "Hovedkjøkken"). Kategoriene
+  (`kategori`) er fortsatt felles for alle – det er kun *varene* (`vare`,
+  via `lager_id`) som er atskilt per lager.
+- Cookien satt i `/tilgang` bærer med seg hvilket lager koden hører til
+  (`src/lib/access/session.ts` leser den ut igjen), og både
+  `src/app/page.tsx` og alle server actions i `src/app/actions.ts`
+  filtrerer/setter `lager_id` ut fra det – aldri fra noe klienten selv kan
+  påvirke direkte.
+- I `/admin` velger du et eksisterende lager fra nedtrekkslisten når du
+  oppretter en kode eller godkjenner en forespørsel, eller skriver navnet på
+  et helt nytt for å opprette det på sparket.
+- Samme forbehold som over gjelder: denne atskillelsen skjer i
+  applikasjonslaget (spørringene filtrerer på `lager_id`), ikke i RLS – siden
+  `vare` fortsatt er åpen via den publiserbare nøkkelen. Praktisk talt
+  umulig å utnytte uten å kjenne til en annen husholdnings vare-IDer, men
+  verdt å vite.
 
 **Viktig begrensning:** kodeporten beskytter selve Next.js-appens
 brukergrensesnitt. Den publiserbare Supabase-nøkkelen som appen bruker for

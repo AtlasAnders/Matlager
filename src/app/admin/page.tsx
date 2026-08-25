@@ -1,4 +1,4 @@
-import { sjekkAdminInnlogget, hentForesporsler, hentKoder } from "@/lib/access/admin-actions";
+import { sjekkAdminInnlogget, hentForesporsler, hentKoder, hentLagre } from "@/lib/access/admin-actions";
 import AdminLogin from "./AdminLogin";
 import AdminDashboard from "./AdminDashboard";
 
@@ -17,11 +17,15 @@ export default async function AdminPage() {
     );
   }
 
-  const [foresporsler, koder] = await Promise.all([hentForesporsler(), hentKoder()]);
+  const [foresporsler, koder, lagre] = await Promise.all([
+    hentForesporsler(),
+    hentKoder(),
+    hentLagre(),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-8 pb-16">
-      <AdminDashboard initialForesporsler={foresporsler} initialKoder={koder} />
+      <AdminDashboard initialForesporsler={foresporsler} initialKoder={koder} initialLagre={lagre} />
     </div>
   );
 }

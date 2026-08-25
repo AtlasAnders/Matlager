@@ -16,9 +16,13 @@ export async function verifiserKode(kode: string): Promise<SkjemaResultat> {
   const { data, error } = await supabase.rpc("sjekk_tilgangskode", { p_kode: trimmet });
 
   if (error) return { ok: false, feil: "Noe gikk galt, prøv igjen" };
-  if (!data) return { ok: false, feil: "Feil kode" };
+  const treff = data?.[0];
+  if (!treff) return { ok: false, feil: "Feil kode" };
 
-  const token = await lagToken({ exp: Date.now() + VISITOR_TTL_MS }, cookieSecret());
+  const token = await lagToken(
+    { lagerId: treff.lager_id, exp: Date.now() + VISITOR_TTL_MS },
+    cookieSecret()
+  );
   const cookieStore = await cookies();
   cookieStore.set(VISITOR_COOKIE, token, {
     httpOnly: true,

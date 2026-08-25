@@ -23,7 +23,18 @@ export type Tilgangskode = {
   navn: string | null;
   aktiv: boolean;
   opprettet: string;
+  lager_id: string;
+  lager_navn: string;
 };
+
+export type Lager = {
+  id: string;
+  navn: string;
+  opprettet: string;
+};
+
+/** Enten en eksisterende lager-id, eller navnet på et nytt lager som skal opprettes. */
+export type LagerValg = { lagerId: string; nyttLagerNavn?: undefined } | { lagerId?: undefined; nyttLagerNavn: string };
 
 async function erAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -79,16 +90,33 @@ export async function hentKoder(): Promise<Tilgangskode[]> {
   return data ?? [];
 }
 
-export async function godkjennForesporsel(id: string): Promise<{ ok: boolean; kode?: string; feil?: string }> {
+export async function hentLagre(): Promise<Lager[]> {
   await kreverAdmin();
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_godkjenn_foresporsel", {
+  const { data, error } = await supabase.rpc("admin_hent_lagre", {
+    p_admin_kode: adminCode(),
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function godkjennForesporsel(
+  id: string,
+  kode: string,
+  lagerValg: LagerValg
+): Promise<SkjemaResultat> {
+  await kreverAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_godkjenn_foresporsel", {
     p_admin_kode: adminCode(),
     p_id: id,
+    p_kode: kode.trim(),
+    p_lager_id: lagerValg.lagerId,
+    p_nytt_lager_navn: lagerValg.nyttLagerNavn,
   });
   if (error) return { ok: false, feil: error.message };
   revalidatePath("/admin");
-  return { ok: true, kode: data };
+  return { ok: true };
 }
 
 export async function avvisForesporsel(id: string): Promise<SkjemaResultat> {
@@ -103,16 +131,23 @@ export async function avvisForesporsel(id: string): Promise<SkjemaResultat> {
   return { ok: true };
 }
 
-export async function opprettKode(navn: string): Promise<{ ok: boolean; kode?: string; feil?: string }> {
+export async function opprettKode(
+  kode: string,
+  navn: string,
+  lagerValg: LagerValg
+): Promise<SkjemaResultat> {
   await kreverAdmin();
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_opprett_kode", {
+  const { error } = await supabase.rpc("admin_opprett_kode", {
     p_admin_kode: adminCode(),
+    p_kode: kode.trim(),
     p_navn: navn.trim(),
+    p_lager_id: lagerValg.lagerId,
+    p_nytt_lager_navn: lagerValg.nyttLagerNavn,
   });
   if (error) return { ok: false, feil: error.message };
   revalidatePath("/admin");
-  return { ok: true, kode: data };
+  return { ok: true };
 }
 
 export async function tilbakekallKode(id: string): Promise<SkjemaResultat> {

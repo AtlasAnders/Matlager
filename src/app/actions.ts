@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { mapVare } from "@/lib/mappers";
+import { kreverAktivLager } from "@/lib/access/session";
 import type { Enhet } from "@/lib/types";
 
 export type VareInput = {
@@ -20,6 +21,7 @@ export async function opprettVare(input: VareInput) {
   const navn = input.navn.trim();
   if (!navn) throw new Error("Navn er påkrevd");
 
+  const lagerId = await kreverAktivLager();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vare")
@@ -28,6 +30,7 @@ export async function opprettVare(input: VareInput) {
       kategori_id: input.kategoriId,
       mengde: Math.max(0, rund(input.mengde)),
       enhet: input.enhet,
+      lager_id: lagerId,
     })
     .select("*, kategori(*)")
     .single();
@@ -41,6 +44,7 @@ export async function oppdaterVare(id: string, input: VareInput) {
   const navn = input.navn.trim();
   if (!navn) throw new Error("Navn er påkrevd");
 
+  const lagerId = await kreverAktivLager();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vare")
@@ -51,6 +55,7 @@ export async function oppdaterVare(id: string, input: VareInput) {
       enhet: input.enhet,
     })
     .eq("id", id)
+    .eq("lager_id", lagerId)
     .select("*, kategori(*)")
     .single();
 
@@ -60,19 +65,22 @@ export async function oppdaterVare(id: string, input: VareInput) {
 }
 
 export async function slettVare(id: string) {
+  const lagerId = await kreverAktivLager();
   const supabase = await createClient();
-  const { error } = await supabase.from("vare").delete().eq("id", id);
+  const { error } = await supabase.from("vare").delete().eq("id", id).eq("lager_id", lagerId);
   if (error) throw error;
   revalidatePath("/");
 }
 
 export async function endreMengde(id: string, delta: number) {
+  const lagerId = await kreverAktivLager();
   const supabase = await createClient();
 
   const { data: eksisterende, error: hentError } = await supabase
     .from("vare")
     .select("mengde")
     .eq("id", id)
+    .eq("lager_id", lagerId)
     .single();
   if (hentError) throw hentError;
 
@@ -82,6 +90,7 @@ export async function endreMengde(id: string, delta: number) {
     .from("vare")
     .update({ mengde: nyMengde })
     .eq("id", id)
+    .eq("lager_id", lagerId)
     .select("*, kategori(*)")
     .single();
 
@@ -91,11 +100,13 @@ export async function endreMengde(id: string, delta: number) {
 }
 
 export async function settMengde(id: string, mengde: number) {
+  const lagerId = await kreverAktivLager();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vare")
     .update({ mengde: Math.max(0, rund(mengde)) })
     .eq("id", id)
+    .eq("lager_id", lagerId)
     .select("*, kategori(*)")
     .single();
 

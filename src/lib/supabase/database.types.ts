@@ -53,6 +53,24 @@ export type Database = {
         }
         Relationships: []
       }
+      lager: {
+        Row: {
+          id: string
+          navn: string
+          opprettet: string
+        }
+        Insert: {
+          id?: string
+          navn: string
+          opprettet?: string
+        }
+        Update: {
+          id?: string
+          navn?: string
+          opprettet?: string
+        }
+        Relationships: []
+      }
       tilgangsforesporsler: {
         Row: {
           generert_kode: string | null
@@ -85,6 +103,7 @@ export type Database = {
           aktiv: boolean
           id: string
           kode: string
+          lager_id: string
           navn: string | null
           opprettet: string
         }
@@ -92,6 +111,7 @@ export type Database = {
           aktiv?: boolean
           id?: string
           kode: string
+          lager_id: string
           navn?: string | null
           opprettet?: string
         }
@@ -99,16 +119,26 @@ export type Database = {
           aktiv?: boolean
           id?: string
           kode?: string
+          lager_id?: string
           navn?: string | null
           opprettet?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tilgangskoder_lager_id_fkey"
+            columns: ["lager_id"]
+            isOneToOne: false
+            referencedRelation: "lager"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vare: {
         Row: {
           enhet: Database["public"]["Enums"]["enhet"]
           id: string
           kategori_id: string
+          lager_id: string
           mengde: number
           navn: string
           sist_oppdatert: string
@@ -117,6 +147,7 @@ export type Database = {
           enhet?: Database["public"]["Enums"]["enhet"]
           id?: string
           kategori_id: string
+          lager_id: string
           mengde?: number
           navn: string
           sist_oppdatert?: string
@@ -125,6 +156,7 @@ export type Database = {
           enhet?: Database["public"]["Enums"]["enhet"]
           id?: string
           kategori_id?: string
+          lager_id?: string
           mengde?: number
           navn?: string
           sist_oppdatert?: string
@@ -135,6 +167,13 @@ export type Database = {
             columns: ["kategori_id"]
             isOneToOne: false
             referencedRelation: "kategori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vare_lager_id_fkey"
+            columns: ["lager_id"]
+            isOneToOne: false
+            referencedRelation: "lager"
             referencedColumns: ["id"]
           },
         ]
@@ -150,8 +189,14 @@ export type Database = {
         Returns: undefined
       }
       admin_godkjenn_foresporsel: {
-        Args: { p_admin_kode: string; p_id: string }
-        Returns: string
+        Args: {
+          p_admin_kode: string
+          p_id: string
+          p_kode: string
+          p_lager_id?: string
+          p_nytt_lager_navn?: string
+        }
+        Returns: undefined
       }
       admin_hent_forespoersler: {
         Args: { p_admin_kode: string }
@@ -170,13 +215,29 @@ export type Database = {
           aktiv: boolean
           id: string
           kode: string
-          navn: string | null
+          lager_id: string
+          lager_navn: string
+          navn: string
+          opprettet: string
+        }[]
+      }
+      admin_hent_lagre: {
+        Args: { p_admin_kode: string }
+        Returns: {
+          id: string
+          navn: string
           opprettet: string
         }[]
       }
       admin_opprett_kode: {
-        Args: { p_admin_kode: string; p_navn: string }
-        Returns: string
+        Args: {
+          p_admin_kode: string
+          p_kode: string
+          p_lager_id?: string
+          p_navn?: string
+          p_nytt_lager_navn?: string
+        }
+        Returns: undefined
       }
       admin_tilbakekall_kode: {
         Args: { p_admin_kode: string; p_id: string }
@@ -186,7 +247,13 @@ export type Database = {
         Args: { p_melding?: string; p_navn: string }
         Returns: undefined
       }
-      sjekk_tilgangskode: { Args: { p_kode: string }; Returns: boolean }
+      sjekk_tilgangskode: {
+        Args: { p_kode: string }
+        Returns: {
+          lager_id: string
+          lager_navn: string
+        }[]
+      }
     }
     Enums: {
       enhet: "stk" | "kg" | "g" | "l" | "dl" | "ml" | "pakke" | "boks" | "pose"
