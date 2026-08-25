@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PackageSearch } from "lucide-react";
 import * as actions from "@/app/actions";
 import * as middagsplanActions from "@/app/middagsplan-actions";
+import { kjopFraHandleliste, type KjopInput } from "@/app/handleliste-actions";
 import type { Enhet, HandlelisteEntry, KategoriModel, PlanlagtIngrediens, VareMedKategori } from "@/lib/types";
 import SearchBar from "./SearchBar";
 import CategoryChips from "./CategoryChips";
@@ -61,7 +62,9 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
 
   // Handleliste: tomme varer, pluss det middagsplanen sier mangler utover det du har.
   // Alt som stammer fra middagsplanen (uansett om varen også står helt tom) regnes
-  // som "middagsvare"; bare rene tom-for-flagg uten noe planbehov er "øvrig".
+  // som "middagsvare"; bare rene tom-for-flagg uten noe planbehov er "øvrig". Flere
+  // middagsplan-rader mot samme vare (f.eks. to middager som begge trenger pasta)
+  // slås sammen til én rad med summert behov.
   const handlelisteEntries = useMemo(() => {
     const map = new Map<string, HandlelisteEntry>();
 
@@ -74,35 +77,53 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
           enhet: v.enhet,
           kategori: v.kategori,
           fraMiddagsplan: false,
+          vareId: v.id,
+          planIder: [],
         });
       }
     }
 
+    const planPerVare = new Map<string, PlanlagtIngrediens[]>();
     for (const rad of middagsplan) {
-      if (rad.vareId) {
-        const vare = varer.find((v) => v.id === rad.vareId);
-        if (!vare) continue;
-        const mangler = Math.max(0, rund(rad.mengde - vare.mengde));
-        if (mangler > 0) {
-          map.set(vare.id, {
-            id: vare.id,
-            navn: vare.navn,
-            mengdeAaKjope: mangler,
-            enhet: rad.enhet,
-            kategori: vare.kategori,
-            fraMiddagsplan: true,
-          });
-        }
-      } else {
-        map.set(`plan-${rad.id}`, {
-          id: `plan-${rad.id}`,
-          navn: rad.navn,
-          mengdeAaKjope: rad.mengde,
-          enhet: rad.enhet,
-          kategori: null,
+      if (!rad.vareId) continue;
+      const liste = planPerVare.get(rad.vareId) ?? [];
+      liste.push(rad);
+      planPerVare.set(rad.vareId, liste);
+    }
+
+    for (const [vareId, rader] of planPerVare) {
+      const vare = varer.find((v) => v.id === vareId);
+      if (!vare) continue;
+      const totaltBehov = rader.reduce((sum, r) => sum + r.mengde, 0);
+      const mangler = Math.max(0, rund(totaltBehov - vare.mengde));
+      if (mangler > 0) {
+        map.set(vare.id, {
+          id: vare.id,
+          navn: vare.navn,
+          mengdeAaKjope: mangler,
+          enhet: vare.enhet,
+          kategori: vare.kategori,
           fraMiddagsplan: true,
+          vareId: vare.id,
+          planIder: rader.map((r) => r.id),
         });
+      } else {
+        map.delete(vare.id);
       }
+    }
+
+    for (const rad of middagsplan) {
+      if (rad.vareId) continue;
+      map.set(`plan-${rad.id}`, {
+        id: `plan-${rad.id}`,
+        navn: rad.navn,
+        mengdeAaKjope: rad.mengde,
+        enhet: rad.enhet,
+        kategori: null,
+        fraMiddagsplan: true,
+        vareId: null,
+        planIder: [rad.id],
+      });
     }
 
     return Array.from(map.values());
@@ -211,6 +232,23 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     setMiddagsplan((prev) => prev.filter((rad) => rad.id !== id));
   }
 
+  async function handleKjop(entry: HandlelisteEntry, kjoptMengde: number, kategoriId: string | null) {
+    const input: KjopInput = {
+      vareId: entry.vareId,
+      planIder: entry.planIder,
+      navn: entry.navn,
+      kategoriId: entry.kategori?.id ?? kategoriId,
+      kjoptMengde,
+      enhet: entry.enhet,
+    };
+    const vare = await kjopFraHandleliste(input);
+
+    setVarer((prev) => (prev.some((v) => v.id === vare.id) ? prev.map((v) => (v.id === vare.id ? vare : v)) : [...prev, vare]));
+    if (entry.planIder.length > 0) {
+      setMiddagsplan((prev) => prev.filter((rad) => !entry.planIder.includes(rad.id)));
+    }
+  }
+
   const visHandleliste = visKunTomme;
   const listeErTom = visHandleliste
     ? middagsvarerGrupper.length === 0 && middagsvarerNye.length === 0 && ovrigeGrupper.length === 0
@@ -256,6 +294,8 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
             middagsvarerGrupper={middagsvarerGrupper}
             middagsvarerNye={middagsvarerNye}
             ovrigeGrupper={ovrigeGrupper}
+            kategorier={kategorier}
+            onKjop={handleKjop}
           />
         ) : (
           grupper.map(({ kategori, varer: varerIKategori }) => (

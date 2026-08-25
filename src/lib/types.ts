@@ -38,6 +38,10 @@ export type HandlelisteEntry = {
   enhet: Enhet;
   kategori: KategoriModel | null;
   fraMiddagsplan: boolean;
+  /** Finnes fra før i lageret (og skal oppdateres), eller null for en helt ny vare. */
+  vareId: string | null;
+  /** Middagsplan-radene denne oppføringen stammer fra – slettes når varen kjøpes inn. */
+  planIder: string[];
 };
 
 export const ENHET_LABELS: Record<Enhet, string> = {
