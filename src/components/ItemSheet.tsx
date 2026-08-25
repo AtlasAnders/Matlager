@@ -75,8 +75,8 @@ function SkjemaInnhold({
   onSlett: (id: string) => Promise<void>;
 }) {
   const [navn, setNavn] = useState(vare?.navn ?? "");
-  const [kategoriId, setKategoriId] = useState(vare?.kategoriId ?? kategorier[0]?.id ?? "");
-  const [mengde, setMengde] = useState(String(vare?.mengde ?? 1));
+  const [kategoriId, setKategoriId] = useState(vare?.kategoriId ?? "");
+  const [mengde, setMengde] = useState(vare ? String(vare.mengde) : "");
   const [enhet, setEnhet] = useState<Enhet>(vare?.enhet ?? "stk");
   const [lagrer, setLagrer] = useState(false);
   const [feil, setFeil] = useState<string | null>(null);
@@ -187,7 +187,8 @@ function SkjemaInnhold({
             value={mengde}
             onChange={(e) => setMengde(e.target.value)}
             inputMode="decimal"
-            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+            placeholder="0"
+            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
           />
         </div>
         <div className="flex flex-[1.4] flex-col gap-1.5">
