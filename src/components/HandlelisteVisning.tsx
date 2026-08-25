@@ -4,9 +4,12 @@ import { PackagePlus } from "lucide-react";
 import { IKON_KART, STANDARD_IKON } from "@/lib/category-icons";
 import { ENHET_LABELS, type HandlelisteEntry, type KategoriModel } from "@/lib/types";
 
+type Gruppe = { kategori: KategoriModel; entries: HandlelisteEntry[] };
+
 type Props = {
-  grupper: { kategori: KategoriModel; entries: HandlelisteEntry[] }[];
-  nyeVarer: HandlelisteEntry[];
+  middagsvarerGrupper: Gruppe[];
+  middagsvarerNye: HandlelisteEntry[];
+  ovrigeGrupper: Gruppe[];
 };
 
 function Rad({ entry }: { entry: HandlelisteEntry }) {
@@ -52,9 +55,11 @@ function GruppeHeader({ kategori }: { kategori: KategoriModel }) {
   );
 }
 
-export default function HandlelisteVisning({ grupper, nyeVarer }: Props) {
+function Seksjon({ tittel, grupper, nyeVarer }: { tittel: string; grupper: Gruppe[]; nyeVarer: HandlelisteEntry[] }) {
   return (
-    <>
+    <div className="flex flex-col gap-4">
+      <h1 className="px-1 text-lg font-bold tracking-tight text-foreground">{tittel}</h1>
+
       {grupper.map(({ kategori, entries }) => (
         <section key={kategori.id}>
           <GruppeHeader kategori={kategori} />
@@ -81,6 +86,20 @@ export default function HandlelisteVisning({ grupper, nyeVarer }: Props) {
           </div>
         </section>
       )}
-    </>
+    </div>
+  );
+}
+
+export default function HandlelisteVisning({ middagsvarerGrupper, middagsvarerNye, ovrigeGrupper }: Props) {
+  const harMiddagsvarer = middagsvarerGrupper.length > 0 || middagsvarerNye.length > 0;
+  const harOvrige = ovrigeGrupper.length > 0;
+
+  return (
+    <div className="flex flex-col gap-8">
+      {harMiddagsvarer && (
+        <Seksjon tittel="Middagsvarer" grupper={middagsvarerGrupper} nyeVarer={middagsvarerNye} />
+      )}
+      {harOvrige && <Seksjon tittel="Øvrige tomme varer" grupper={ovrigeGrupper} nyeVarer={[]} />}
+    </div>
   );
 }

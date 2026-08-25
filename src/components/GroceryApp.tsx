@@ -60,12 +60,21 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
   }, [kategorier, filtrerteVarer]);
 
   // Handleliste: tomme varer, pluss det middagsplanen sier mangler utover det du har.
+  // Alt som stammer fra middagsplanen (uansett om varen også står helt tom) regnes
+  // som "middagsvare"; bare rene tom-for-flagg uten noe planbehov er "øvrig".
   const handlelisteEntries = useMemo(() => {
     const map = new Map<string, HandlelisteEntry>();
 
     for (const v of varer) {
       if (v.mengde <= 0) {
-        map.set(v.id, { id: v.id, navn: v.navn, mengdeAaKjope: 0, enhet: v.enhet, kategori: v.kategori });
+        map.set(v.id, {
+          id: v.id,
+          navn: v.navn,
+          mengdeAaKjope: 0,
+          enhet: v.enhet,
+          kategori: v.kategori,
+          fraMiddagsplan: false,
+        });
       }
     }
 
@@ -75,7 +84,14 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
         if (!vare) continue;
         const mangler = Math.max(0, rund(rad.mengde - vare.mengde));
         if (mangler > 0) {
-          map.set(vare.id, { id: vare.id, navn: vare.navn, mengdeAaKjope: mangler, enhet: rad.enhet, kategori: vare.kategori });
+          map.set(vare.id, {
+            id: vare.id,
+            navn: vare.navn,
+            mengdeAaKjope: mangler,
+            enhet: rad.enhet,
+            kategori: vare.kategori,
+            fraMiddagsplan: true,
+          });
         }
       } else {
         map.set(`plan-${rad.id}`, {
@@ -84,6 +100,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
           mengdeAaKjope: rad.mengde,
           enhet: rad.enhet,
           kategori: null,
+          fraMiddagsplan: true,
         });
       }
     }
@@ -101,24 +118,25 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     });
   }, [handlelisteEntries, sok, valgteKategorier]);
 
-  const handlelisteGrupper = useMemo(() => {
+  function grupperEtterKategori(entries: HandlelisteEntry[]) {
     return kategorier
       .map((kategori) => ({
         kategori,
-        entries: filtrerteHandlelisteEntries
+        entries: entries
           .filter((e) => e.kategori?.id === kategori.id)
           .sort((a, b) => a.navn.localeCompare(b.navn, "no")),
       }))
       .filter((gruppe) => gruppe.entries.length > 0);
-  }, [kategorier, filtrerteHandlelisteEntries]);
+  }
 
-  const nyeVarerPaHandleliste = useMemo(
-    () =>
-      filtrerteHandlelisteEntries
-        .filter((e) => e.kategori === null)
-        .sort((a, b) => a.navn.localeCompare(b.navn, "no")),
-    [filtrerteHandlelisteEntries]
-  );
+  const middagsvarer = filtrerteHandlelisteEntries.filter((e) => e.fraMiddagsplan);
+  const ovrigeTommeVarer = filtrerteHandlelisteEntries.filter((e) => !e.fraMiddagsplan);
+
+  const middagsvarerGrupper = grupperEtterKategori(middagsvarer);
+  const middagsvarerNye = middagsvarer
+    .filter((e) => e.kategori === null)
+    .sort((a, b) => a.navn.localeCompare(b.navn, "no"));
+  const ovrigeGrupper = grupperEtterKategori(ovrigeTommeVarer);
 
   function toggleKategori(id: string) {
     setValgteKategorier((prev) => {
@@ -195,7 +213,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
 
   const visHandleliste = visKunTomme;
   const listeErTom = visHandleliste
-    ? handlelisteGrupper.length === 0 && nyeVarerPaHandleliste.length === 0
+    ? middagsvarerGrupper.length === 0 && middagsvarerNye.length === 0 && ovrigeGrupper.length === 0
     : grupper.length === 0;
 
   return (
@@ -234,7 +252,11 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
             </p>
           </div>
         ) : visHandleliste ? (
-          <HandlelisteVisning grupper={handlelisteGrupper} nyeVarer={nyeVarerPaHandleliste} />
+          <HandlelisteVisning
+            middagsvarerGrupper={middagsvarerGrupper}
+            middagsvarerNye={middagsvarerNye}
+            ovrigeGrupper={ovrigeGrupper}
+          />
         ) : (
           grupper.map(({ kategori, varer: varerIKategori }) => (
             <CategorySection

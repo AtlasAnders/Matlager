@@ -37,6 +37,7 @@ export type HandlelisteEntry = {
   mengdeAaKjope: number;
   enhet: Enhet;
   kategori: KategoriModel | null;
+  fraMiddagsplan: boolean;
 };
 
 export const ENHET_LABELS: Record<Enhet, string> = {
