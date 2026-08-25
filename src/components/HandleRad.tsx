@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ListPlus, PackagePlus } from "lucide-react";
+import { Check, PackagePlus, ShoppingCart, X } from "lucide-react";
 import { IKON_KART, STANDARD_IKON } from "@/lib/category-icons";
 import { ENHET_LABELS, type HandlelisteEntry, type KategoriModel } from "@/lib/types";
 
@@ -12,12 +12,14 @@ export function HandleRad({
   kategorier,
   onKjop,
   onFlytt,
+  onFjern,
   visningstype = "handleliste",
 }: {
   entry: HandlelisteEntry;
   kategorier: KategoriModel[];
   onKjop: OnKjop;
   onFlytt?: (entry: HandlelisteEntry) => void;
+  onFjern?: (entry: HandlelisteEntry) => void;
   visningstype?: "handleliste" | "tomt";
 }) {
   const Ikon = entry.kategori ? IKON_KART[entry.kategori.ikon] ?? STANDARD_IKON : PackagePlus;
@@ -98,8 +100,18 @@ export function HandleRad({
             onClick={() => onFlytt(entry)}
             className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-strong px-3 text-sm font-semibold text-foreground"
           >
-            <ListPlus className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4" />
             Flytt
+          </button>
+        )}
+        {visningstype === "handleliste" && onFjern && (
+          <button
+            type="button"
+            onClick={() => onFjern(entry)}
+            aria-label={`Fjern ${entry.navn} fra handlelisten`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-strong text-foreground-muted"
+          >
+            <X className="h-4 w-4" />
           </button>
         )}
         <button

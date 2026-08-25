@@ -238,6 +238,14 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     if (entry.vareId) handleTogglePaHandleliste(entry.vareId, true);
   }
 
+  function handleFjernFraHandleliste(entry: HandlelisteEntry) {
+    if (entry.fraMiddagsplan) {
+      for (const id of entry.planIder) handleSlettIngrediens(id);
+    } else if (entry.vareId) {
+      handleTogglePaHandleliste(entry.vareId, false);
+    }
+  }
+
   function apneLeggTil() {
     setSheet((prev) => ({ apen: true, modus: "legg-til", vare: undefined, token: prev.token + 1 }));
   }
@@ -351,6 +359,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
             manueltNye={manueltNye}
             kategorier={kategorier}
             onKjop={handleKjop}
+            onFjern={handleFjernFraHandleliste}
           />
         ) : visning === "tomt" ? (
           <TomtVisning

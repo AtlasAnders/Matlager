@@ -6,6 +6,8 @@ import type { HandlelisteEntry, KategoriModel } from "@/lib/types";
 
 type Gruppe = { kategori: KategoriModel; entries: HandlelisteEntry[] };
 
+type OnFjern = (entry: HandlelisteEntry) => void;
+
 type Props = {
   middagsvarerGrupper: Gruppe[];
   middagsvarerNye: HandlelisteEntry[];
@@ -13,6 +15,7 @@ type Props = {
   manueltNye: HandlelisteEntry[];
   kategorier: KategoriModel[];
   onKjop: OnKjop;
+  onFjern: OnFjern;
 };
 
 function Seksjon({
@@ -21,12 +24,14 @@ function Seksjon({
   nyeVarer,
   kategorier,
   onKjop,
+  onFjern,
 }: {
   tittel: string;
   grupper: Gruppe[];
   nyeVarer: HandlelisteEntry[];
   kategorier: KategoriModel[];
   onKjop: OnKjop;
+  onFjern: OnFjern;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +42,7 @@ function Seksjon({
           <HandleGruppeHeader kategori={kategori} />
           <div className="flex flex-col gap-1.5">
             {entries.map((entry) => (
-              <HandleRad key={entry.id} entry={entry} kategorier={kategorier} onKjop={onKjop} />
+              <HandleRad key={entry.id} entry={entry} kategorier={kategorier} onKjop={onKjop} onFjern={onFjern} />
             ))}
           </div>
         </section>
@@ -53,7 +58,7 @@ function Seksjon({
           </div>
           <div className="flex flex-col gap-1.5">
             {nyeVarer.map((entry) => (
-              <HandleRad key={entry.id} entry={entry} kategorier={kategorier} onKjop={onKjop} />
+              <HandleRad key={entry.id} entry={entry} kategorier={kategorier} onKjop={onKjop} onFjern={onFjern} />
             ))}
           </div>
         </section>
@@ -69,6 +74,7 @@ export default function HandlelisteVisning({
   manueltNye,
   kategorier,
   onKjop,
+  onFjern,
 }: Props) {
   const harMiddagsvarer = middagsvarerGrupper.length > 0 || middagsvarerNye.length > 0;
   const harManuelt = manueltGrupper.length > 0 || manueltNye.length > 0;
@@ -82,6 +88,7 @@ export default function HandlelisteVisning({
           nyeVarer={middagsvarerNye}
           kategorier={kategorier}
           onKjop={onKjop}
+          onFjern={onFjern}
         />
       )}
       {harManuelt && (
@@ -91,6 +98,7 @@ export default function HandlelisteVisning({
           nyeVarer={manueltNye}
           kategorier={kategorier}
           onKjop={onKjop}
+          onFjern={onFjern}
         />
       )}
     </div>
