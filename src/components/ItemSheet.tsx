@@ -9,6 +9,8 @@ export type SheetTilstand = {
   apen: boolean;
   modus: "legg-til" | "rediger";
   vare?: VareMedKategori;
+  /** Legges til direkte på handlelisten (uten lagerbeholdning) i stedet for det vanlige lageret. */
+  tilHandleliste?: boolean;
   token: number;
 };
 
@@ -49,6 +51,7 @@ export default function ItemSheet({ tilstand, kategorier, onLukk, onSlett, onLag
           key={tilstand.token}
           modus={tilstand.modus}
           vare={tilstand.vare}
+          tilHandleliste={tilstand.tilHandleliste ?? false}
           kategorier={kategorier}
           onLukk={onLukk}
           onLagre={onLagre}
@@ -62,6 +65,7 @@ export default function ItemSheet({ tilstand, kategorier, onLukk, onSlett, onLag
 function SkjemaInnhold({
   modus,
   vare,
+  tilHandleliste,
   kategorier,
   onLukk,
   onLagre,
@@ -69,6 +73,7 @@ function SkjemaInnhold({
 }: {
   modus: "legg-til" | "rediger";
   vare?: VareMedKategori;
+  tilHandleliste: boolean;
   kategorier: KategoriModel[];
   onLukk: () => void;
   onLagre: (data: { navn: string; kategoriId: string; mengde: number; enhet: Enhet }) => Promise<void>;
@@ -124,7 +129,7 @@ function SkjemaInnhold({
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">
-          {modus === "legg-til" ? "Legg til vare" : "Rediger vare"}
+          {modus === "rediger" ? "Rediger vare" : tilHandleliste ? "Legg til i handlelisten" : "Legg til vare"}
         </h2>
         <button
           type="button"
@@ -180,7 +185,7 @@ function SkjemaInnhold({
       <div className="flex gap-3">
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="vare-mengde" className="text-sm font-medium text-foreground-muted">
-            Mengde
+            {tilHandleliste ? "Mengde du trenger" : "Mengde"}
           </label>
           <input
             id="vare-mengde"
@@ -220,7 +225,7 @@ function SkjemaInnhold({
           disabled={lagrer}
           className="h-12 w-full rounded-2xl bg-accent text-[15px] font-semibold text-accent-foreground transition-opacity disabled:opacity-60"
         >
-          {modus === "legg-til" ? "Legg til" : "Lagre endringer"}
+          {modus === "rediger" ? "Lagre endringer" : tilHandleliste ? "Legg til på listen" : "Legg til"}
         </button>
         {modus === "rediger" && vare && (
           <button

@@ -250,7 +250,13 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
   }
 
   function apneLeggTil() {
-    setSheet((prev) => ({ apen: true, modus: "legg-til", vare: undefined, token: prev.token + 1 }));
+    setSheet((prev) => ({
+      apen: true,
+      modus: "legg-til",
+      vare: undefined,
+      tilHandleliste: visning === "handleliste",
+      token: prev.token + 1,
+    }));
   }
 
   function apneRediger(vare: VareMedKategori) {
@@ -263,8 +269,14 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
 
   async function handleLagre(data: { navn: string; kategoriId: string; mengde: number; enhet: Enhet }) {
     if (sheet.modus === "legg-til") {
-      const ny = await actions.opprettVare(data);
-      setVarer((prev) => [...prev, ny]);
+      if (sheet.tilHandleliste) {
+        const ny = await actions.opprettVare({ ...data, mengde: 0 });
+        const flagget = await actions.settPaHandleliste(ny.id, true, data.mengde > 0 ? data.mengde : null);
+        setVarer((prev) => [...prev, flagget]);
+      } else {
+        const ny = await actions.opprettVare(data);
+        setVarer((prev) => [...prev, ny]);
+      }
     } else if (sheet.vare) {
       const oppdatert = await actions.oppdaterVare(sheet.vare.id, data);
       setVarer((prev) => prev.map((v) => (v.id === oppdatert.id ? oppdatert : v)));
