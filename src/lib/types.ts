@@ -20,6 +20,25 @@ export type VareMedKategori = {
   kategori: KategoriModel;
 };
 
+export type PlanlagtIngrediens = {
+  id: string;
+  navn: string;
+  vareId: string | null;
+  mengde: number;
+  enhet: Enhet;
+  opprettet: string;
+};
+
+/** En rad på handlelisten: enten en tom vare (mengdeAaKjope 0) eller et
+ * spesifikt behov utledet fra middagsplanen (mengdeAaKjope > 0). */
+export type HandlelisteEntry = {
+  id: string;
+  navn: string;
+  mengdeAaKjope: number;
+  enhet: Enhet;
+  kategori: KategoriModel | null;
+};
+
 export const ENHET_LABELS: Record<Enhet, string> = {
   stk: "stk",
   kg: "kg",

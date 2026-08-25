@@ -14,7 +14,7 @@ export default function HandlelisteKnapp({ aktiv, antallTomme, onToggle }: Props
       type="button"
       onClick={onToggle}
       aria-pressed={aktiv}
-      className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border text-[15px] font-medium transition-colors"
+      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border text-[15px] font-medium transition-colors"
       style={
         aktiv
           ? { backgroundColor: "var(--danger)", borderColor: "var(--danger)", color: "var(--danger-foreground)" }

@@ -71,6 +71,51 @@ export type Database = {
         }
         Relationships: []
       }
+      middag_ingrediens: {
+        Row: {
+          enhet: Database["public"]["Enums"]["enhet"]
+          id: string
+          lager_id: string
+          mengde: number
+          navn: string
+          opprettet: string
+          vare_id: string | null
+        }
+        Insert: {
+          enhet: Database["public"]["Enums"]["enhet"]
+          id?: string
+          lager_id: string
+          mengde: number
+          navn: string
+          opprettet?: string
+          vare_id?: string | null
+        }
+        Update: {
+          enhet?: Database["public"]["Enums"]["enhet"]
+          id?: string
+          lager_id?: string
+          mengde?: number
+          navn?: string
+          opprettet?: string
+          vare_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "middag_ingrediens_lager_id_fkey"
+            columns: ["lager_id"]
+            isOneToOne: false
+            referencedRelation: "lager"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "middag_ingrediens_vare_id_fkey"
+            columns: ["vare_id"]
+            isOneToOne: false
+            referencedRelation: "vare"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tilgangsforesporsler: {
         Row: {
           generert_kode: string | null
