@@ -8,6 +8,7 @@ import SearchBar from "./SearchBar";
 import CategoryChips from "./CategoryChips";
 import CategorySection from "./CategorySection";
 import Fab from "./Fab";
+import HandlelisteKnapp from "./HandlelisteKnapp";
 import ItemSheet, { type SheetTilstand } from "./ItemSheet";
 
 type Props = {
@@ -20,20 +21,24 @@ export default function GroceryApp({ initialKategorier, initialVarer }: Props) {
   const [varer, setVarer] = useState<VareMedKategori[]>(initialVarer);
   const [sok, setSok] = useState("");
   const [valgteKategorier, setValgteKategorier] = useState<Set<string>>(new Set());
+  const [visKunTomme, setVisKunTomme] = useState(false);
   const [sheet, setSheet] = useState<SheetTilstand>({
     apen: false,
     modus: "legg-til",
     token: 0,
   });
 
+  const antallTomme = useMemo(() => varer.filter((v) => v.mengde <= 0).length, [varer]);
+
   const filtrerteVarer = useMemo(() => {
     const sokLav = sok.trim().toLowerCase();
     return varer.filter((v) => {
       const matcherSok = sokLav === "" || v.navn.toLowerCase().includes(sokLav);
       const matcherKategori = valgteKategorier.size === 0 || valgteKategorier.has(v.kategoriId);
-      return matcherSok && matcherKategori;
+      const matcherTom = !visKunTomme || v.mengde <= 0;
+      return matcherSok && matcherKategori && matcherTom;
     });
-  }, [varer, sok, valgteKategorier]);
+  }, [varer, sok, valgteKategorier, visKunTomme]);
 
   const grupper = useMemo(() => {
     return kategorier
@@ -116,6 +121,13 @@ export default function GroceryApp({ initialKategorier, initialVarer }: Props) {
         <div className="px-4">
           <SearchBar verdi={sok} onEndre={setSok} />
         </div>
+        <div className="px-4">
+          <HandlelisteKnapp
+            aktiv={visKunTomme}
+            antallTomme={antallTomme}
+            onToggle={() => setVisKunTomme((v) => !v)}
+          />
+        </div>
         <CategoryChips
           kategorier={kategorier}
           valgte={valgteKategorier}
@@ -129,7 +141,11 @@ export default function GroceryApp({ initialKategorier, initialVarer }: Props) {
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
             <PackageSearch className="h-10 w-10 text-foreground-muted" strokeWidth={1.5} />
             <p className="text-sm text-foreground-muted">
-              {varer.length === 0 ? "Ingen varer registrert ennå" : "Fant ingen varer som matcher"}
+              {varer.length === 0
+                ? "Ingen varer registrert ennå"
+                : visKunTomme
+                  ? "Ingenting er tomt for akkurat nå"
+                  : "Fant ingen varer som matcher"}
             </p>
           </div>
         ) : (
