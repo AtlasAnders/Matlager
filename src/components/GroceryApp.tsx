@@ -44,12 +44,13 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     token: 0,
   });
 
+  // Tomme varer (mengde <= 0) vises kun under "Tomt", ikke i den vanlige oversikten.
   const filtrerteVarer = useMemo(() => {
     const sokLav = sok.trim().toLowerCase();
     return varer.filter((v) => {
       const matcherSok = sokLav === "" || v.navn.toLowerCase().includes(sokLav);
       const matcherKategori = valgteKategorier.size === 0 || valgteKategorier.has(v.kategoriId);
-      return matcherSok && matcherKategori;
+      return matcherSok && matcherKategori && v.mengde > 0;
     });
   }, [varer, sok, valgteKategorier]);
 
@@ -233,6 +234,10 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     }
   }
 
+  function handleFlyttTilHandleliste(entry: HandlelisteEntry) {
+    if (entry.vareId) handleTogglePaHandleliste(entry.vareId, true);
+  }
+
   function apneLeggTil() {
     setSheet((prev) => ({ apen: true, modus: "legg-til", vare: undefined, token: prev.token + 1 }));
   }
@@ -348,7 +353,12 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
             onKjop={handleKjop}
           />
         ) : visning === "tomt" ? (
-          <TomtVisning grupper={tomtGrupper} kategorier={kategorier} onKjop={handleKjop} />
+          <TomtVisning
+            grupper={tomtGrupper}
+            kategorier={kategorier}
+            onKjop={handleKjop}
+            onFlytt={handleFlyttTilHandleliste}
+          />
         ) : (
           grupper.map(({ kategori, varer: varerIKategori }) => (
             <CategorySection

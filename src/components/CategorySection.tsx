@@ -22,7 +22,6 @@ export default function CategorySection({
   onTogglePaHandleliste,
 }: Props) {
   const Ikon = IKON_KART[kategori.ikon] ?? STANDARD_IKON;
-  const antallTomme = varer.filter((v) => v.mengde <= 0).length;
 
   return (
     <section>
@@ -36,7 +35,6 @@ export default function CategorySection({
         <h2 className="text-[15px] font-semibold text-foreground">{kategori.navn}</h2>
         <span className="text-xs text-foreground-muted">
           {varer.length} {varer.length === 1 ? "vare" : "varer"}
-          {antallTomme > 0 ? ` · ${antallTomme} tom for` : ""}
         </span>
       </div>
 

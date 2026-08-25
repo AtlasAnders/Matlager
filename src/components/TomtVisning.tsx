@@ -9,9 +9,10 @@ type Props = {
   grupper: Gruppe[];
   kategorier: KategoriModel[];
   onKjop: OnKjop;
+  onFlytt: (entry: HandlelisteEntry) => void;
 };
 
-export default function TomtVisning({ grupper, kategorier, onKjop }: Props) {
+export default function TomtVisning({ grupper, kategorier, onKjop, onFlytt }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {grupper.map(({ kategori, entries }) => (
@@ -19,7 +20,14 @@ export default function TomtVisning({ grupper, kategorier, onKjop }: Props) {
           <HandleGruppeHeader kategori={kategori} />
           <div className="flex flex-col gap-1.5">
             {entries.map((entry) => (
-              <HandleRad key={entry.id} entry={entry} kategorier={kategorier} onKjop={onKjop} visningstype="tomt" />
+              <HandleRad
+                key={entry.id}
+                entry={entry}
+                kategorier={kategorier}
+                onKjop={onKjop}
+                onFlytt={onFlytt}
+                visningstype="tomt"
+              />
             ))}
           </div>
         </section>

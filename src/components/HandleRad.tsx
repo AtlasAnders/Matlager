@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, PackagePlus } from "lucide-react";
+import { Check, ListPlus, PackagePlus } from "lucide-react";
 import { IKON_KART, STANDARD_IKON } from "@/lib/category-icons";
 import { ENHET_LABELS, type HandlelisteEntry, type KategoriModel } from "@/lib/types";
 
@@ -11,11 +11,13 @@ export function HandleRad({
   entry,
   kategorier,
   onKjop,
+  onFlytt,
   visningstype = "handleliste",
 }: {
   entry: HandlelisteEntry;
   kategorier: KategoriModel[];
   onKjop: OnKjop;
+  onFlytt?: (entry: HandlelisteEntry) => void;
   visningstype?: "handleliste" | "tomt";
 }) {
   const Ikon = entry.kategori ? IKON_KART[entry.kategori.ikon] ?? STANDARD_IKON : PackagePlus;
@@ -90,6 +92,16 @@ export function HandleRad({
           className={`h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground placeholder:text-foreground-muted focus:outline-none focus:ring-2 focus:ring-accent/40 ${trengerKategori ? "w-20 shrink-0" : "flex-1"}`}
         />
         <span className="shrink-0 text-xs text-foreground-muted">{ENHET_LABELS[entry.enhet]}</span>
+        {visningstype === "tomt" && onFlytt && (
+          <button
+            type="button"
+            onClick={() => onFlytt(entry)}
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-strong px-3 text-sm font-semibold text-foreground"
+          >
+            <ListPlus className="h-4 w-4" />
+            Flytt
+          </button>
+        )}
         <button
           type="button"
           onClick={handleKjop}

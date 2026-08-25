@@ -14,7 +14,6 @@ type Props = {
 
 export default function ItemRow({ vare, onEndreMengde, onSettMengde, onApne, onTogglePaHandleliste }: Props) {
   const Ikon = IKON_KART[vare.kategori.ikon] ?? STANDARD_IKON;
-  const tomForVare = vare.mengde <= 0;
 
   function lagreInput(e: React.FocusEvent<HTMLInputElement>) {
     const tallverdi = parseFloat(e.target.value.replace(",", "."));
@@ -44,13 +43,7 @@ export default function ItemRow({ vare, onEndreMengde, onSettMengde, onApne, onT
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-medium text-foreground">{vare.navn}</p>
-        {tomForVare ? (
-          <span className="mt-0.5 inline-block rounded-full bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
-            Tom for
-          </span>
-        ) : (
-          <p className="mt-0.5 text-xs text-foreground-muted">{vare.kategori.navn}</p>
-        )}
+        <p className="mt-0.5 text-xs text-foreground-muted">{vare.kategori.navn}</p>
       </div>
 
       <div
