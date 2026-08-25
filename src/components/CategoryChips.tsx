@@ -12,7 +12,7 @@ type Props = {
 
 export default function CategoryChips({ kategorier, valgte, onToggle, onNullstill }: Props) {
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-1">
+    <div className="flex flex-wrap gap-2 px-4 pb-1">
       {valgte.size > 0 && (
         <button
           type="button"
