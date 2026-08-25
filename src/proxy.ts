@@ -7,7 +7,10 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(VISITOR_COOKIE)?.value;
   const payload = await verifiserToken(token, cookieSecret());
 
-  if (payload) return NextResponse.next();
+  // A valid signature alone isn't enough — older cookies (issued before
+  // multi-lager support) verify fine but lack lagerId, which would crash
+  // the page instead of prompting a fresh login.
+  if (payload && typeof payload.lagerId === "string") return NextResponse.next();
 
   const url = new URL("/tilgang", request.url);
   return NextResponse.redirect(url);

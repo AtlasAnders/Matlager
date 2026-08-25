@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { verifiserToken } from "./tokens";
 import { VISITOR_COOKIE, cookieSecret } from "./constants";
 
@@ -10,8 +11,13 @@ export async function hentAktivLagerId(): Promise<string | null> {
   return payload.lagerId;
 }
 
+/**
+ * proxy.ts already blocks requests without a valid lagerId, but redirect
+ * here too as a safety net (e.g. an older-format cookie slipping through)
+ * instead of throwing an unhandled error that crashes the page.
+ */
 export async function kreverAktivLager(): Promise<string> {
   const lagerId = await hentAktivLagerId();
-  if (!lagerId) throw new Error("Ingen gyldig tilgang. Gå til /tilgang.");
+  if (!lagerId) redirect("/tilgang");
   return lagerId;
 }
