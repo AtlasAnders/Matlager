@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { IKON_KART, STANDARD_IKON } from "@/lib/category-icons";
 import { ENHET_LABELS, type VareMedKategori } from "@/lib/types";
 
@@ -9,9 +9,10 @@ type Props = {
   onEndreMengde: (id: string, delta: number) => void;
   onSettMengde: (id: string, mengde: number) => void;
   onApne: (vare: VareMedKategori) => void;
+  onTogglePaHandleliste: (id: string, verdi: boolean) => void;
 };
 
-export default function ItemRow({ vare, onEndreMengde, onSettMengde, onApne }: Props) {
+export default function ItemRow({ vare, onEndreMengde, onSettMengde, onApne, onTogglePaHandleliste }: Props) {
   const Ikon = IKON_KART[vare.kategori.ikon] ?? STANDARD_IKON;
   const tomForVare = vare.mengde <= 0;
 
@@ -90,6 +91,26 @@ export default function ItemRow({ vare, onEndreMengde, onSettMengde, onApne }: P
           <Plus className="h-4 w-4" />
         </button>
       </div>
+
+      <button
+        type="button"
+        aria-label={
+          vare.paHandleliste ? `Fjern ${vare.navn} fra handlelisten` : `Legg til ${vare.navn} i handlelisten`
+        }
+        aria-pressed={vare.paHandleliste}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTogglePaHandleliste(vare.id, !vare.paHandleliste);
+        }}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors"
+        style={
+          vare.paHandleliste
+            ? { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }
+            : { backgroundColor: "var(--surface-strong)", color: "var(--foreground-muted)", border: "1px solid var(--border)" }
+        }
+      >
+        <ShoppingCart className="h-4 w-4" />
+      </button>
     </div>
   );
 }

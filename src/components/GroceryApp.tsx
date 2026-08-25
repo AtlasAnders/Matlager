@@ -12,6 +12,8 @@ import CategorySection from "./CategorySection";
 import Fab from "./Fab";
 import HandlelisteKnapp from "./HandlelisteKnapp";
 import HandlelisteVisning from "./HandlelisteVisning";
+import TomtKnapp from "./TomtKnapp";
+import TomtVisning from "./TomtVisning";
 import MiddagsplanKnapp from "./MiddagsplanKnapp";
 import MiddagsplanSheet from "./MiddagsplanSheet";
 import ItemSheet, { type SheetTilstand } from "./ItemSheet";
@@ -21,6 +23,8 @@ type Props = {
   initialVarer: VareMedKategori[];
   initialMiddagsplan: PlanlagtIngrediens[];
 };
+
+type Visning = "alle" | "handleliste" | "tomt";
 
 function rund(n: number) {
   return Math.round(n * 100) / 100;
@@ -32,7 +36,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
   const [middagsplan, setMiddagsplan] = useState<PlanlagtIngrediens[]>(initialMiddagsplan);
   const [sok, setSok] = useState("");
   const [valgteKategorier, setValgteKategorier] = useState<Set<string>>(new Set());
-  const [visKunTomme, setVisKunTomme] = useState(false);
+  const [visning, setVisning] = useState<Visning>("alle");
   const [middagsplanApen, setMiddagsplanApen] = useState(false);
   const [sheet, setSheet] = useState<SheetTilstand>({
     apen: false,
@@ -60,17 +64,34 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
       .filter((gruppe) => gruppe.varer.length > 0);
   }, [kategorier, filtrerteVarer]);
 
-  // Handleliste: tomme varer, pluss det middagsplanen sier mangler utover det du har.
-  // Alt som stammer fra middagsplanen (uansett om varen også står helt tom) regnes
-  // som "middagsvare"; bare rene tom-for-flagg uten noe planbehov er "øvrig". Flere
-  // middagsplan-rader mot samme vare (f.eks. to middager som begge trenger pasta)
-  // slås sammen til én rad med summert behov.
-  const handlelisteEntries = useMemo(() => {
-    const map = new Map<string, HandlelisteEntry>();
+  // Tomt: varer som rett og slett har gått tom (mengde <= 0) – ren lagerstatus,
+  // uavhengig av handleliste/middagsplan.
+  const tomtEntries = useMemo<HandlelisteEntry[]>(
+    () =>
+      varer
+        .filter((v) => v.mengde <= 0)
+        .map((v) => ({
+          id: v.id,
+          navn: v.navn,
+          mengdeAaKjope: 0,
+          enhet: v.enhet,
+          kategori: v.kategori,
+          fraMiddagsplan: false,
+          vareId: v.id,
+          planIder: [],
+        })),
+    [varer]
+  );
 
+  // Handleliste: det middagsplanen sier mangler utover det du har, pluss varer du
+  // manuelt har lagt til med "Legg til i handleliste". Flere middagsplan-rader mot
+  // samme vare (f.eks. to middager som begge trenger pasta) summeres. Et manuelt
+  // flagg overstyres av et konkret planbehov for samme vare (mer nyttig info).
+  const handlelisteEntries = useMemo(() => {
+    const manuelt = new Map<string, HandlelisteEntry>();
     for (const v of varer) {
-      if (v.mengde <= 0) {
-        map.set(v.id, {
+      if (v.paHandleliste) {
+        manuelt.set(v.id, {
           id: v.id,
           navn: v.navn,
           mengdeAaKjope: 0,
@@ -91,13 +112,14 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
       planPerVare.set(rad.vareId, liste);
     }
 
+    const fraPlan = new Map<string, HandlelisteEntry>();
     for (const [vareId, rader] of planPerVare) {
       const vare = varer.find((v) => v.id === vareId);
       if (!vare) continue;
       const totaltBehov = rader.reduce((sum, r) => sum + r.mengde, 0);
       const mangler = Math.max(0, rund(totaltBehov - vare.mengde));
       if (mangler > 0) {
-        map.set(vare.id, {
+        fraPlan.set(vare.id, {
           id: vare.id,
           navn: vare.navn,
           mengdeAaKjope: mangler,
@@ -107,14 +129,11 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
           vareId: vare.id,
           planIder: rader.map((r) => r.id),
         });
-      } else {
-        map.delete(vare.id);
       }
     }
-
     for (const rad of middagsplan) {
       if (rad.vareId) continue;
-      map.set(`plan-${rad.id}`, {
+      fraPlan.set(`plan-${rad.id}`, {
         id: `plan-${rad.id}`,
         navn: rad.navn,
         mengdeAaKjope: rad.mengde,
@@ -126,18 +145,10 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
       });
     }
 
-    return Array.from(map.values());
+    const samlet = new Map(manuelt);
+    for (const [id, entry] of fraPlan) samlet.set(id, entry);
+    return Array.from(samlet.values());
   }, [varer, middagsplan]);
-
-  const filtrerteHandlelisteEntries = useMemo(() => {
-    const sokLav = sok.trim().toLowerCase();
-    return handlelisteEntries.filter((e) => {
-      const matcherSok = sokLav === "" || e.navn.toLowerCase().includes(sokLav);
-      const matcherKategori =
-        valgteKategorier.size === 0 || (e.kategori !== null && valgteKategorier.has(e.kategori.id));
-      return matcherSok && matcherKategori;
-    });
-  }, [handlelisteEntries, sok, valgteKategorier]);
 
   function grupperEtterKategori(entries: HandlelisteEntry[]) {
     return kategorier
@@ -150,14 +161,32 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
       .filter((gruppe) => gruppe.entries.length > 0);
   }
 
+  function filtrer(entries: HandlelisteEntry[]) {
+    const sokLav = sok.trim().toLowerCase();
+    return entries.filter((e) => {
+      const matcherSok = sokLav === "" || e.navn.toLowerCase().includes(sokLav);
+      const matcherKategori =
+        valgteKategorier.size === 0 || (e.kategori !== null && valgteKategorier.has(e.kategori.id));
+      return matcherSok && matcherKategori;
+    });
+  }
+
+  const filtrerteHandlelisteEntries = filtrer(handlelisteEntries);
+  const filtrerteTomtEntries = filtrer(tomtEntries);
+
   const middagsvarer = filtrerteHandlelisteEntries.filter((e) => e.fraMiddagsplan);
-  const ovrigeTommeVarer = filtrerteHandlelisteEntries.filter((e) => !e.fraMiddagsplan);
+  const manueltLagtTil = filtrerteHandlelisteEntries.filter((e) => !e.fraMiddagsplan);
 
   const middagsvarerGrupper = grupperEtterKategori(middagsvarer);
   const middagsvarerNye = middagsvarer
     .filter((e) => e.kategori === null)
     .sort((a, b) => a.navn.localeCompare(b.navn, "no"));
-  const ovrigeGrupper = grupperEtterKategori(ovrigeTommeVarer);
+  const manueltGrupper = grupperEtterKategori(manueltLagtTil);
+  const manueltNye = manueltLagtTil
+    .filter((e) => e.kategori === null)
+    .sort((a, b) => a.navn.localeCompare(b.navn, "no"));
+
+  const tomtGrupper = grupperEtterKategori(filtrerteTomtEntries);
 
   function toggleKategori(id: string) {
     setValgteKategorier((prev) => {
@@ -187,6 +216,17 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     setVarer((prev) => prev.map((v) => (v.id === id ? { ...v, mengde: trygMengde } : v)));
     try {
       const oppdatert = await actions.settMengde(id, trygMengde);
+      setVarer((prev) => prev.map((v) => (v.id === id ? oppdatert : v)));
+    } catch {
+      setVarer(forrige);
+    }
+  }
+
+  async function handleTogglePaHandleliste(id: string, verdi: boolean) {
+    const forrige = varer;
+    setVarer((prev) => prev.map((v) => (v.id === id ? { ...v, paHandleliste: verdi } : v)));
+    try {
+      const oppdatert = await actions.settPaHandleliste(id, verdi);
       setVarer((prev) => prev.map((v) => (v.id === id ? oppdatert : v)));
     } catch {
       setVarer(forrige);
@@ -249,10 +289,12 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
     }
   }
 
-  const visHandleliste = visKunTomme;
-  const listeErTom = visHandleliste
-    ? middagsvarerGrupper.length === 0 && middagsvarerNye.length === 0 && ovrigeGrupper.length === 0
-    : grupper.length === 0;
+  const listeErTom =
+    visning === "handleliste"
+      ? middagsvarerGrupper.length === 0 && middagsvarerNye.length === 0 && manueltGrupper.length === 0
+      : visning === "tomt"
+        ? tomtGrupper.length === 0
+        : grupper.length === 0;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
@@ -261,11 +303,16 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
         <div className="px-4">
           <SearchBar verdi={sok} onEndre={setSok} />
         </div>
-        <div className="flex gap-2 px-4">
+        <div className="flex flex-wrap gap-2 px-4">
           <HandlelisteKnapp
-            aktiv={visKunTomme}
+            aktiv={visning === "handleliste"}
             antallTomme={handlelisteEntries.length}
-            onToggle={() => setVisKunTomme((v) => !v)}
+            onToggle={() => setVisning((v) => (v === "handleliste" ? "alle" : "handleliste"))}
+          />
+          <TomtKnapp
+            aktiv={visning === "tomt"}
+            antall={tomtEntries.length}
+            onToggle={() => setVisning((v) => (v === "tomt" ? "alle" : "tomt"))}
           />
           <MiddagsplanKnapp antall={middagsplan.length} onClick={() => setMiddagsplanApen(true)} />
         </div>
@@ -284,19 +331,24 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
             <p className="text-sm text-foreground-muted">
               {varer.length === 0
                 ? "Ingen varer registrert ennå"
-                : visHandleliste
-                  ? "Ingenting er tomt for akkurat nå"
-                  : "Fant ingen varer som matcher"}
+                : visning === "handleliste"
+                  ? "Ingenting på handlelisten akkurat nå"
+                  : visning === "tomt"
+                    ? "Ingenting er tomt for akkurat nå"
+                    : "Fant ingen varer som matcher"}
             </p>
           </div>
-        ) : visHandleliste ? (
+        ) : visning === "handleliste" ? (
           <HandlelisteVisning
             middagsvarerGrupper={middagsvarerGrupper}
             middagsvarerNye={middagsvarerNye}
-            ovrigeGrupper={ovrigeGrupper}
+            manueltGrupper={manueltGrupper}
+            manueltNye={manueltNye}
             kategorier={kategorier}
             onKjop={handleKjop}
           />
+        ) : visning === "tomt" ? (
+          <TomtVisning grupper={tomtGrupper} kategorier={kategorier} onKjop={handleKjop} />
         ) : (
           grupper.map(({ kategori, varer: varerIKategori }) => (
             <CategorySection
@@ -306,6 +358,7 @@ export default function GroceryApp({ initialKategorier, initialVarer, initialMid
               onEndreMengde={handleEndreMengde}
               onSettMengde={handleSettMengde}
               onApneVare={apneRediger}
+              onTogglePaHandleliste={handleTogglePaHandleliste}
             />
           ))
         )}

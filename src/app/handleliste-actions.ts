@@ -42,7 +42,7 @@ export async function kjopFraHandleliste(input: KjopInput) {
     const nyMengde = rund(Number(eksisterende.mengde) + input.kjoptMengde);
     const { data, error } = await supabase
       .from("vare")
-      .update({ mengde: nyMengde })
+      .update({ mengde: nyMengde, pa_handleliste: false })
       .eq("id", input.vareId)
       .eq("lager_id", lagerId)
       .select("*, kategori(*)")

@@ -24,6 +24,7 @@ export function mapVare(row: VareRow & { kategori: KategoriRow }): VareMedKatego
     enhet: row.enhet,
     sistOppdatert: row.sist_oppdatert,
     kategori: mapKategori(row.kategori),
+    paHandleliste: row.pa_handleliste,
   };
 }
 

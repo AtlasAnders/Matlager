@@ -10,6 +10,7 @@ type Props = {
   onEndreMengde: (id: string, delta: number) => void;
   onSettMengde: (id: string, mengde: number) => void;
   onApneVare: (vare: VareMedKategori) => void;
+  onTogglePaHandleliste: (id: string, verdi: boolean) => void;
 };
 
 export default function CategorySection({
@@ -18,6 +19,7 @@ export default function CategorySection({
   onEndreMengde,
   onSettMengde,
   onApneVare,
+  onTogglePaHandleliste,
 }: Props) {
   const Ikon = IKON_KART[kategori.ikon] ?? STANDARD_IKON;
   const antallTomme = varer.filter((v) => v.mengde <= 0).length;
@@ -46,6 +48,7 @@ export default function CategorySection({
             onEndreMengde={onEndreMengde}
             onSettMengde={onSettMengde}
             onApne={onApneVare}
+            onTogglePaHandleliste={onTogglePaHandleliste}
           />
         ))}
       </div>

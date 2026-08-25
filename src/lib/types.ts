@@ -18,6 +18,7 @@ export type VareMedKategori = {
   enhet: Enhet;
   sistOppdatert: string;
   kategori: KategoriModel;
+  paHandleliste: boolean;
 };
 
 export type PlanlagtIngrediens = {
@@ -29,8 +30,10 @@ export type PlanlagtIngrediens = {
   opprettet: string;
 };
 
-/** En rad på handlelisten: enten en tom vare (mengdeAaKjope 0) eller et
- * spesifikt behov utledet fra middagsplanen (mengdeAaKjope > 0). */
+/** En rad på handlelisten: enten manuelt lagt til uten et spesifikt mål
+ * (mengdeAaKjope 0), eller et konkret behov utledet fra middagsplanen
+ * (mengdeAaKjope > 0). Rene "tom for"-varer uten plan/manuelt flagg vises
+ * i stedet under "Tomt", ikke her. */
 export type HandlelisteEntry = {
   id: string;
   navn: string;

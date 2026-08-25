@@ -186,6 +186,7 @@ export type Database = {
           lager_id: string
           mengde: number
           navn: string
+          pa_handleliste: boolean
           sist_oppdatert: string
         }
         Insert: {
@@ -195,6 +196,7 @@ export type Database = {
           lager_id: string
           mengde?: number
           navn: string
+          pa_handleliste?: boolean
           sist_oppdatert?: string
         }
         Update: {
@@ -204,6 +206,7 @@ export type Database = {
           lager_id?: string
           mengde?: number
           navn?: string
+          pa_handleliste?: boolean
           sist_oppdatert?: string
         }
         Relationships: [

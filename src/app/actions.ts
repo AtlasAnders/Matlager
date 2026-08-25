@@ -114,3 +114,19 @@ export async function settMengde(id: string, mengde: number) {
   revalidatePath("/");
   return mapVare(data);
 }
+
+export async function settPaHandleliste(id: string, verdi: boolean) {
+  const lagerId = await kreverAktivLager();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vare")
+    .update({ pa_handleliste: verdi })
+    .eq("id", id)
+    .eq("lager_id", lagerId)
+    .select("*, kategori(*)")
+    .single();
+
+  if (error) throw error;
+  revalidatePath("/");
+  return mapVare(data);
+}
