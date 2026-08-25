@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_innstillinger: {
+        Row: {
+          id: string
+          verdi: string
+        }
+        Insert: {
+          id: string
+          verdi: string
+        }
+        Update: {
+          id?: string
+          verdi?: string
+        }
+        Relationships: []
+      }
       kategori: {
         Row: {
           farge: string
@@ -35,6 +50,57 @@ export type Database = {
           ikon?: string
           navn?: string
           rekkefolge?: number
+        }
+        Relationships: []
+      }
+      tilgangsforesporsler: {
+        Row: {
+          generert_kode: string | null
+          id: string
+          melding: string | null
+          navn: string
+          opprettet: string
+          status: string
+        }
+        Insert: {
+          generert_kode?: string | null
+          id?: string
+          melding?: string | null
+          navn: string
+          opprettet?: string
+          status?: string
+        }
+        Update: {
+          generert_kode?: string | null
+          id?: string
+          melding?: string | null
+          navn?: string
+          opprettet?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      tilgangskoder: {
+        Row: {
+          aktiv: boolean
+          id: string
+          kode: string
+          navn: string | null
+          opprettet: string
+        }
+        Insert: {
+          aktiv?: boolean
+          id?: string
+          kode: string
+          navn?: string | null
+          opprettet?: string
+        }
+        Update: {
+          aktiv?: boolean
+          id?: string
+          kode?: string
+          navn?: string | null
+          opprettet?: string
         }
         Relationships: []
       }
@@ -78,7 +144,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      _sjekk_admin: { Args: { p_admin_kode: string }; Returns: undefined }
+      admin_avvis_foresporsel: {
+        Args: { p_admin_kode: string; p_id: string }
+        Returns: undefined
+      }
+      admin_godkjenn_foresporsel: {
+        Args: { p_admin_kode: string; p_id: string }
+        Returns: string
+      }
+      admin_hent_forespoersler: {
+        Args: { p_admin_kode: string }
+        Returns: {
+          generert_kode: string | null
+          id: string
+          melding: string | null
+          navn: string
+          opprettet: string
+          status: string
+        }[]
+      }
+      admin_hent_koder: {
+        Args: { p_admin_kode: string }
+        Returns: {
+          aktiv: boolean
+          id: string
+          kode: string
+          navn: string | null
+          opprettet: string
+        }[]
+      }
+      admin_opprett_kode: {
+        Args: { p_admin_kode: string; p_navn: string }
+        Returns: string
+      }
+      admin_tilbakekall_kode: {
+        Args: { p_admin_kode: string; p_id: string }
+        Returns: undefined
+      }
+      send_tilgangsforesporsel: {
+        Args: { p_melding?: string; p_navn: string }
+        Returns: undefined
+      }
+      sjekk_tilgangskode: { Args: { p_kode: string }; Returns: boolean }
     }
     Enums: {
       enhet: "stk" | "kg" | "g" | "l" | "dl" | "ml" | "pakke" | "boks" | "pose"

@@ -10,11 +10,11 @@ En enkel PWA for å holde oversikt over dagligvarer hjemme: se hva du har, hvor 
 - lucide-react for ikoner
 - PWA: `manifest.json` + service worker for "Legg til på Hjem-skjerm" og offline-visning
 
-Databasen er delt (samme Supabase-prosjekt for alle), og det kreves ingen
-innlogging – alle som åpner appen kan se og endre varene. `kategori`- og
+Databasen er delt (samme Supabase-prosjekt for alle). `kategori`- og
 `vare`-tabellene har Row Level Security påslått med policyer som tillater
 full lesing/skriving for alle (se `select/insert/update/delete using (true)`
-i migrasjonen som ble kjørt mot prosjektet).
+i migrasjonen som ble kjørt mot prosjektet) – det er egen tilgangskontroll
+foran selve appen (se [Tilgangskontroll](#tilgangskontroll) under).
 
 ## Kom i gang
 
@@ -37,6 +37,17 @@ de er prefikset med `NEXT_PUBLIC_` blir de bundlet til klienten – det er
 forventet og trygt for den publiserbare nøkkelen, som RLS-policyene
 begrenser.
 
+Legg i tillegg til to hemmeligheter (kun server-side, aldri prefikset
+`NEXT_PUBLIC_`):
+
+```bash
+COOKIE_SECRET=<en lang, tilfeldig streng>
+ADMIN_CODE=<koden du selv bruker for å logge inn på /admin>
+```
+
+`ADMIN_CODE` må også matche `verdi`-feltet i `app_innstillinger`-raden med
+`id = 'admin_kode'` i databasen (se [Tilgangskontroll](#tilgangskontroll)).
+
 Start utviklingsserveren:
 
 ```bash
@@ -54,6 +65,9 @@ npm run dev
 - `src/app/actions.ts` – server actions for å opprette/oppdatere/slette varer
 - `src/app/page.tsx` – henter data fra Supabase og rendrer `GroceryApp`
 - `src/components/` – UI: søk, kategori-chips, kategori-seksjoner, vare-rad, bunnark for legg til/rediger
+- `src/proxy.ts` – porter/omdirigerer besøkende uten gyldig tilgangscookie til `/tilgang`
+- `src/lib/access/` – signerte cookies, server actions for kode/forespørsel (besøkende) og admin-dashbordet
+- `src/app/tilgang/` og `src/app/admin/` – tilgangsport og admin-dashbord
 - `public/manifest.json` og `public/sw.js` – PWA-oppsett
 
 ## Databasemodell
@@ -65,6 +79,45 @@ To tabeller i Supabase-prosjektet:
 
 `enhet` er en Postgres-enum (`stk, kg, g, l, dl, ml, pakke, boks, pose`), og
 `sist_oppdatert` settes automatisk av en trigger ved hver `UPDATE`.
+
+For tilgangskontroll: `tilgangskoder`, `tilgangsforesporsler` og
+`app_innstillinger` (se [Tilgangskontroll](#tilgangskontroll)).
+
+## Tilgangskontroll
+
+Appen selv krever ingen innlogging (se over), men er skjermet av en enkel
+kodeport foran Next.js-appen:
+
+- **`src/proxy.ts`** sjekker på hver forespørsel om nettleseren har en
+  gyldig, signert `dv_tilgang`-cookie. Mangler den, omdirigeres besøkende
+  til **`/tilgang`**. `/tilgang` og `/admin` selv er unntatt.
+- På **`/tilgang`** kan man enten skrive inn en tilgangskode direkte, eller
+  trykke **"Be om tilgang"** og sende inn navn (+ valgfri melding) – det
+  havner som en ventende forespørsel i databasen.
+- **`/admin`** (logg inn med `ADMIN_CODE`) viser ventende forespørsler.
+  **Godkjenn** genererer en tilfeldig 6-tegns kode du kan sende personen
+  (SMS, muntlig, e-post – utenfor appen), **Avvis** avslår den. Du kan også
+  opprette koder manuelt uten en forespørsel, og tilbakekalle koder som er
+  aktive.
+- Kodene lagres i `tilgangskoder`-tabellen, forespørslene i
+  `tilgangsforesporsler`. Begge har RLS påslått uten policyer – de er kun
+  nåbare via et sett `SECURITY DEFINER`-funksjoner i Postgres
+  (`sjekk_tilgangskode`, `send_tilgangsforesporsel`, og `admin_*`-funksjonene
+  som selv krever `ADMIN_CODE` som parameter). Ingen kan altså lese koder
+  eller forespørsler direkte via Supabase sitt REST-API, i motsetning til
+  `kategori`/`vare` som med vilje er helt åpne.
+
+**Viktig begrensning:** kodeporten beskytter selve Next.js-appens
+brukergrensesnitt. Den publiserbare Supabase-nøkkelen som appen bruker for
+`kategori`/`vare` er fortsatt synlig for alle (den må være det, for at
+nettleseren skal kunne snakke med Supabase i det hele tatt), og disse to
+tabellene har med vilje åpne RLS-policyer. En teknisk kyndig person kan
+derfor i prinsippet lese/skrive dagligvaredataene direkte via Supabase sitt
+API selv uten å ha gått via `/tilgang`. Kodeporten stopper vanlige
+besøkende fra å finne/bruke appens grensesnitt – den er ikke en fullstendig
+sikkerhetsløsning. Vil du lukke det hullet også, må `kategori`/`vare` få
+tilsvarende RLS-innstramming (og en ekte innloggingsløsning, f.eks.
+Supabase Auth) – si ifra hvis det er ønskelig.
 
 ## PWA / "Legg til på Hjem-skjerm" (iPhone)
 
