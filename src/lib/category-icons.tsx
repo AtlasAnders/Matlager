@@ -11,6 +11,9 @@ import {
   ChefHat,
   SprayCan,
   Boxes,
+  Croissant,
+  Sprout,
+  Droplet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +30,9 @@ export const IKON_KART: Record<string, LucideIcon> = {
   ChefHat,
   SprayCan,
   Boxes,
+  Croissant,
+  Sprout,
+  Droplet,
 };
 
 export const STANDARD_IKON = Package;
